@@ -29,3 +29,72 @@ Spring Boot Batch는 Spring Boot를 간편하게 사용 할 수 있게 래핑한
   <li>쓰기(Write) : 수정된 데이터를 다시 저장소(데이터베이스)에 저장한다.</li>
 </ul>
 <img src="https://user-images.githubusercontent.com/47962660/66260270-5cb7d280-e7f7-11e9-815b-2292e1837b61.png"/>
+
+<h3>Job</h3>
+<ul>
+  <li>배치 처리 과정을 하나의 단위로 만들어 표현한 객체이며 전체 배치 처리에 있어 항상 최상단 계층에 있다.</li>
+  <li>위에서 하나의 Job(일감) 안에는 여러 Step(단계)이 있다고 설명했던 바와 같이 Spring Batch에서 Job 객체는 여러 Step 인스턴스를 포함하는 컨테이너이다.</li>
+  <li>Job 객체를 만드는 빌더는 여러 개 있다. 여러 빌더를 통합하여 처리하는 공장인 JobBuilderFactory로 원하는 Jdb을 쉽게 만들 수 있다.</li>
+  <li>JobBuilderFactory는 JobBuilder를 생성할 수 있는 get() 메소드를 포함하고 있다. get() 메소드는 새로운 JobBuider를 생성해서 반환한다.</li>
+  <li>JobBuilderFactory에서는 생성되는 모든 JobBuilder가 Repository를 사용한다.</li>
+  <li>JobBuilder는 직접적으로 Job을 생성하는 것이 아니라 별도의 구체적 빌더를 생성하여 변환하고 경우에 따라 Job 생성 방법이 모두 다를 수 있다는 점을 유연하게 처리할 수 있다.</li>
+</ul>
+<h3>JobInstance</h3>
+<ul>
+  <li>배치 처리에서 Job이 실행될 때 하나의 Job 실행 단위이다. 만약, 하루 한번씩 배치의 Job이 실행된다면 어제와 오늘 실행한 각각의 Job을 JobInstance라 부를 수 있다.</li>
+  <li>각각의 JobInstance는 하나의 JobExecution을 갖는 것이 아니다. 오늘 Job을 실행했는데 실패했다면 다음날 동일한 JobInstance를 가지고 또 실행한다.</li>
+  <li>Job의 실행을 실패하면 JobInstance가 끝난것으로 간주되지 않는다. 그렇기 때문에 JobInstance는 어제 실패한 JobExecution과 오늘 성공한 JobExecution 두 개를 가지게 된다. 즉, JobExecution은 여러 개를 가질 수 있다.</li>
+</ul>
+<h3>JobExecution</h3>
+<ul>
+  <li>JobInstance에 대한 한 번의 실행을 나타내는 객체이다.</li>
+  <li>만약 오늘 Job의 실행을 실패하여 내일 다시 동일한 Job을 실행하면 오늘/내일 모두 같은 JobInstance를 사용한다.</li>
+  <li>실제로 JobExecution 인터페이스를 보면 Job 실행에 대한 정보를 담고 있는 도메인 객체가 있다. JobExecution은 JobInstance, 배치 실행 상태, 시작 시간, 끝난 시간, 실패했을 경우의 메시지 등의 정보를 담고 있다.</li>
+</ul>
+<h3>JobParameters</h3>
+<ul>
+  <li>Job이 실행될 때 필요한 파라미터들을 Map 타입으로 지정하는 객체이다.</li>
+  <li>JobInstance를 구분하는 기준이 되기도 한다.</li>
+  <li>JobInstance와 1:1 관계이다.</li>
+</ul>
+<h3>Step</h3>
+<ul>
+  <li>실질적인 배치 처리를 정의하고 제어하는데 필요한 모든 정보가 있는 도메인 객체이며 Job을 처리하는 실질적인 단위로 쓰인다.</li>
+  <li>모든 Job에는 1개 이상의 Step이 존재해야 한다.</li>
+</ul>
+<h3>StepExecution</h3>
+<ul>
+  <li>Job에 JobExecution이라는 Job 실행 정보가 있다면 Step에는 StepExecution이라는 Step 실행 정보를 담는 객체가 있다.</li>
+</ul>
+<h3>JobRepository</h3>
+<ul>
+  <li>JobRepository는 배치 처리 정보를 담고 있는 매커니즘이다. 어떤 Job이 실행되었으면 몇번 실행되었고 언제 끝났는지 등의 배치 처리에 대한 메타데이터를 저장한다.</li>
+  <li>Job 하나가 실행되면 JobRepository에서는 배치 실행에 관련된 정보를 담고 있는 도메인 JobExecution을 생성한다.</li>
+  <li>Step의 실행 정보를 담고 있는 StepExecution도 저장소에 저장하여 전체 메타데이터를 저장/관리하는 역할을 수행한다.</li>
+</ul>
+<h3>JobLauncher</h3>
+<ul>
+  <li>Job, JobParameters와 함께 배치를 실행하는 인터페이스이다.</li>
+</ul>
+<h3>ItemReader</h3>
+<ul>
+  <li>Step의 대상이 되는 배치 데이터를 읽어오는 인터페이스이다. File, Xml, DB 등 여러 타입의 데이터를 읽어올 수 있다.</li>
+</ul>
+<h3>ItemProcessor</h3>
+<ul>
+  <li>Itemreader로 읽어 온 배치 데이터를 변환하는 역할을 수행한다.</li>
+  <li>
+    읽어온 배치 데이터와 씌여질 데이터의 타입이 다를 경우에 대응할 수 있도록 비지니스 로직을 분리한다.
+    <ul>
+      <li>ItemWriter는 저장을 수행하며 ItemProcessor는 로직 처리만 수행한다.</li>
+    </ul>
+  </li>
+</ul>
+<h3>ItemWriter</h3>
+<ul>
+  <li>배치 데이터를 저장한다. 일반적으로 DB나 파일에 저장한다.</li>
+  <li>ItemReader와 비슷한 방식으로 구현한다. 재네릭으로 원하는 타입을 받고 write() 메소드를 통해 List를 사용해서 저장한 타입의 목록을 매개변수로 받는다.</li>
+</ul>
+
+## 레퍼런스
+https://cheese10yun.github.io/spring-batch-basic/
